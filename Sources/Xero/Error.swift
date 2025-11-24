@@ -15,3 +15,8 @@ public enum EmployeesError: Error, XeroError {
     case noEmployeesFound
     case multipleEmployeesFound
 }
+
+public enum FetchError: Error, XeroError {
+    case noItemsFound
+    case multipleItemsFound
+}

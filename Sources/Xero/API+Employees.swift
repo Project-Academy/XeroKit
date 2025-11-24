@@ -51,15 +51,14 @@ extension API {
     }
 }
 
-public struct EmployeesResponse: Decodable, XeroV1Response {
+internal struct EmployeesResponse: Decodable, XeroV1Response {
     public let employees: [Employee]
     
+    // Default Response Variables
     public let id: String
     public let source: String
     public let status: String
-    
-    @DateString
-    public var utcDate: Date?
+    @DateString var utcDate: Date?
     
     enum CodingKeys: String, CodingKey {
         case id = "Id"
