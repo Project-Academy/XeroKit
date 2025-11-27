@@ -7,7 +7,7 @@ let package = Package(
     name: "XeroKit",
     platforms: [
         .tvOS   (.v18),
-        .iOS    ("17.4"),
+        .iOS    ("17.6"),
         .macOS  (.v13),
         .macCatalyst(.v18)
     ],
