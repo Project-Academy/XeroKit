@@ -32,6 +32,10 @@ extension Employee {
         return employee
     }
     
+    public func fetchRates() async throws -> [PayRate: Decimal] {
+        guard let employeeId else { fatalError() }
+        return try await EarningsRate.payRates(for: employeeId)
+    }
 }
 
 extension API {

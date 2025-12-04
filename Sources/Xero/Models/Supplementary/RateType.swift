@@ -14,3 +14,8 @@ public enum RateType: String, Codable {
     /// An earnings rate allowing entry of a rate per unit
     case ratePerUnit = "RatePerUnit"
 }
+public enum RateCalcType: String, Codable {
+    case earningsRate = "USEEARNINGSRATE"
+    case enterRate = "ENTEREARNINGSRATE"
+    case salary = "ANNUALSALARY"
+}

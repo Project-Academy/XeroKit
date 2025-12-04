@@ -14,6 +14,9 @@ extension EarningsRate {
             .response()
             .asType(EarningsRatesResponse.self)
         
+        let data = try JSONEncoder().encode(response.earningsRates)
+        UserDefaults.standard.set(data, forKey: "XEROKIT_EARNINGS_RATES_LIST")
+        
         return response.earningsRates
     }
     
@@ -26,6 +29,28 @@ extension EarningsRate {
         return rate
     }
     
+    public static func payRates(for empId: String) async throws -> [PayRate: Decimal] {
+        var rates: [PayRate: Decimal] = [:]
+        
+        let _ratesArray: [EarningsRate]
+        if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
+           let ratesList = try? JSONDecoder().decode([EarningsRate].self, from: data) {
+            _ratesArray = ratesList
+        } else { _ratesArray = try await list() }
+        let allRates = _ratesArray.filter { $0.type != .Other }
+        
+        let employee = try await Employee.with(id: empId)
+        guard let earningsLines = employee.payTemplate?.earnings
+        else { throw EarningsRatesError.noEarningsLines }
+        
+        for rate in _ratesArray {
+            guard let line = earningsLines.first(where: { $0.rateId == rate.rateId })
+            else { continue }
+            rates[rate.type] = line.rate
+        }
+        
+        return rates
+    }
 }
 
 extension API {

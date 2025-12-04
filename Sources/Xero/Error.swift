@@ -20,3 +20,7 @@ public enum FetchError: Error, XeroError {
     case noItemsFound
     case multipleItemsFound
 }
+
+public enum EarningsRatesError: Error, XeroError {
+    case noEarningsLines
+}
