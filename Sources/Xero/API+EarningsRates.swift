@@ -63,7 +63,6 @@ extension PayRatesDict: CustomStringConvertible {
             switch rate.value.basis {
             case .perHour: desc.append("/hr")
             case .perUnit(let unit): desc.append("/\(unit)")
-            case .fixedAmount: break
             case .other: break
             }
             desc.append(", ")
