@@ -7,9 +7,9 @@
 
 import Foundation
 
-extension EarningsRate {
+extension EarningsRate_Template {
     
-    public static func list() async throws -> [EarningsRate] {
+    public static func list() async throws -> [EarningsRate_Template] {
         let response = try await API.EarningsRates.list.GET
             .response()
             .asType(EarningsRatesResponse.self)
@@ -20,7 +20,7 @@ extension EarningsRate {
         return response.earningsRates
     }
     
-    public static func with(id: String) async throws -> EarningsRate {
+    public static func with(id: String) async throws -> EarningsRate_Template {
         let rate = try await API.EarningsRates.with(id).GET
             .response()
             .asType(SingleEarningsRatesResponse.self)
@@ -29,29 +29,100 @@ extension EarningsRate {
         return rate
     }
     
-    public static func payRates(for empId: String) async throws -> [PayRate: Decimal] {
-        var rates: [PayRate: Decimal] = [:]
+    public static func payRates(for empId: String) async throws -> PayRatesDict {
+        var rates: PayRatesDict = [:]
         
-        let _ratesArray: [EarningsRate]
+        let _ratesArray: [EarningsRate_Template]
         if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
-           let ratesList = try? JSONDecoder().decode([EarningsRate].self, from: data) {
+           let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data) {
             _ratesArray = ratesList
         } else { _ratesArray = try await list() }
-        let allRates = _ratesArray.filter { $0.type != .Other }
+        let allRates = _ratesArray.filter { $0.rate != .Other }
         
         let employee = try await Employee.with(id: empId)
         guard let earningsLines = employee.payTemplate?.earnings
         else { throw EarningsRatesError.noEarningsLines }
         
         for rate in _ratesArray {
-            guard let line = earningsLines.first(where: { $0.rateId == rate.rateId })
+            guard let line = earningsLines.first(where: { $0.rateId == rate.rateId }),
+                  let rateValue = line.rateValue
             else { continue }
-            rates[rate.type] = line.rate
+            rates[rate.rate] = .init(rate: rate.rate, basis: rate.basis, value: rateValue)
         }
         
         return rates
     }
 }
+
+public typealias PayRatesDict = [PayRate: EarningsRate]
+extension PayRatesDict: CustomStringConvertible {
+    public var description: String {
+        var desc = "["
+        for rate in self {
+            desc += "\(rate.key): \(rate.value.value.formatted(.currency(code: "AUD")))"
+            switch rate.value.basis {
+            case .perHour: desc.append("/hr")
+            case .per(let unit): desc.append("/\(unit)")
+            case .other: break
+            }
+            desc.append(", ")
+        }
+        if desc.contains(", ") { desc.removeLast(2) }
+        return desc
+    }
+}
+public struct EarningsRate {
+    public var rate: PayRate
+    public var basis: EarningsBasis
+    public var value: Decimal
+    
+    public static func fetchRates(employeeId: String?) async throws -> PayRatesDict {
+        guard let employeeId else { return [:] }
+        return try await EarningsRate_Template.payRates(for: employeeId)
+    }
+}
+extension EarningsRate: CustomStringConvertible {
+    public var description: String {
+        var desc = ""
+        desc += "\(rate)(\(value.formatted(.currency(code: "AUD")))"
+        switch basis {
+        case .perHour: desc.append("/hr")
+        case .per(let unit): desc.append("/\(unit)")
+        case .other: break
+        }
+        desc += ")"
+        return desc
+    }
+}
+
+public enum EarningsBasis {
+    case perHour
+    case per(_: String)
+    case other
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 extension API {
     internal enum EarningsRates: Endpoints {
@@ -68,12 +139,15 @@ extension API {
             }
         }
     }
-
 }
+
+
+
+
 
 struct EarningsRatesResponse: Decodable, CustomStringConvertible, XeroV2Response {
     
-    public let earningsRates: [EarningsRate]
+    public let earningsRates: [EarningsRate_Template]
     
     // Default Response Variables
     public let id: String
@@ -105,7 +179,7 @@ struct EarningsRatesResponse: Decodable, CustomStringConvertible, XeroV2Response
 
 struct SingleEarningsRatesResponse: Decodable, XeroV2Response {
     
-    public let earningsRate: EarningsRate
+    public let earningsRate: EarningsRate_Template
     
     // Default Response Variables
     public let id: String

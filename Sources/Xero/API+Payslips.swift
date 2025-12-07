@@ -9,13 +9,37 @@ import Foundation
 
 extension Payslip {
     
+    /**
+     Retrieve a Payslip given the ID 
+     
+     This modifier can be used to set common headers like `Authorization` or custom headers.
+     The header is stored internally and applied to the `urlRequest` when `build()` is called.
+     
+     - Parameters:
+       - id: The PayslipId you wish to fetch from the Xero API.
+     - Returns: A Xero Payslip object corresponding to the payslip ID.
+     */
     public static func with(id: String) async throws -> Payslip {
         let response = try await API.Payslips.with(id).GET
             .response()
             
-        let slip = try response
+        var slip = try response
             .asType(PayslipsResponse.self)
             .slip
+        
+        let _ratesArray: [EarningsRate_Template]
+        if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
+           let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data) {
+            _ratesArray = ratesList
+        } else { _ratesArray = try await EarningsRate_Template.list() }
+        var earningsDict: PayRatesDict = [:]
+        for line in slip.earningsLines ?? [] {
+            guard let eRate = _ratesArray.first(where: { $0.rateId == line.rateId }),
+                  let rateValue = line.rateValue
+            else { continue }
+            earningsDict[eRate.rate] = .init(rate: eRate.rate, basis: eRate.basis, value: rateValue)
+        }
+        slip.earningsDict = earningsDict
         
         return slip
     }

@@ -31,22 +31,36 @@ public struct PayTemplate: Codable {
 }
 
 public struct EarningsLine: Codable {
-    /// Xero earnings rate identifier
+    /// Xero earnings rate identifier.
+    /// Corresponds to ``EarningsRate_Template``'s ``rateId`` property.
     public var rateId: String?
     /// Rate per unit of the EarningsLine
-    public var rate: Decimal?
+    public var rateValue: Decimal?
     
+    /// Possible values: `earningsRate`, `enterRate`, and `salary`.
+    /// In Project's context, almost always `enterRate`.
     public var calcType: RateCalcType?
-    /// Hours per week for the EarningsLine. Applicable for `ANNUALSALARY` ``RateCalcType``
+    
+    /// Hours per week for the EarningsLine.
+    /// Applicable for `ANNUALSALARY` ``RateCalcType``
     public var unitsPerWeek: Int?
     /// Annual Salary of employee
     public var salary: Decimal?
-    /// Normal number of units for EarningsLine. Applicable when ``RateType`` is `MULTIPLE`
+    /// Normal number of units for EarningsLine.
+    /// Applicable when ``RateType`` is `MULTIPLE`
     public var normalNumberOfUnits: Decimal?
+    
+    public var rate: PayRate? {
+        guard let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
+              let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data),
+              let rate = ratesList.first(where: { $0.rateId == self.rateId })?.rate
+        else { return nil }
+        return rate
+    }
     
     enum CodingKeys: String, CodingKey {
         case rateId = "EarningsRateID"
-        case rate = "RatePerUnit"
+        case rateValue = "RatePerUnit"
         case calcType = "CalculationType"
         case unitsPerWeek = "NumberOfUnitsPerWeek"
         case salary = "AnnualSalary"

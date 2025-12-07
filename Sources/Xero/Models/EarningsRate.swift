@@ -7,7 +7,8 @@
 
 import Foundation
 
-public struct EarningsRate: Codable {
+
+public struct EarningsRate_Template: Codable {
     
     //--------------------------------------
     // MARK: - VARIABLES -
@@ -16,7 +17,9 @@ public struct EarningsRate: Codable {
     public let rateId: String
     /// Name of the earnings rate (max length = 100)
     public let name: String
+    
     public let earningsType: EarningsType
+    
     public let rateType: RateType
     /// Type of units used to record earnings (max length = 50).
     /// Only When RateType is RATEPERUNIT
@@ -90,7 +93,7 @@ public struct EarningsRate: Codable {
     }
     
 }
-extension EarningsRate: CustomStringConvertible {
+extension EarningsRate_Template: CustomStringConvertible {
     public var description: String {
         var desc = "(\(name)"
         if earningsType != .ordinary { desc += ", earningsType: \(earningsType)" }
@@ -111,9 +114,9 @@ extension EarningsRate: CustomStringConvertible {
 }
 
 
-extension EarningsRate {
+extension EarningsRate_Template {
     
-    public var type: PayRate {
+    public var rate: PayRate {
         let rate = PayRate(rawValue: name)
         if let rate { return rate }
         return switch name {
@@ -124,8 +127,16 @@ extension EarningsRate {
         default: .Other
         }
     }
+    
+    public var basis: EarningsBasis {
+        switch rate {
+        case .Other: .other
+        case .ThinkTank: .per("ThinkTank")
+        default: .perHour
+        }
+    }
 }
-public enum PayRate: String {
+public enum PayRate: String, CustomStringConvertible {
     case Teaching
     case Tutoring
     case ThinkTank
@@ -145,4 +156,6 @@ public enum PayRate: String {
     
     case WilfFilming
     case Other
+    
+    public var description: String { ".\(rawValue)" }
 }

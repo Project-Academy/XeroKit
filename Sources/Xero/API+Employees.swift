@@ -32,9 +32,9 @@ extension Employee {
         return employee
     }
     
-    public func fetchRates() async throws -> [PayRate: Decimal] {
+    public func fetchRates() async throws -> PayRatesDict {
         guard let employeeId else { fatalError() }
-        return try await EarningsRate.payRates(for: employeeId)
+        return try await EarningsRate_Template.payRates(for: employeeId)
     }
 }
 

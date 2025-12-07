@@ -21,6 +21,7 @@ public struct Payslip: Codable {
     // MARK: - SLIP VARIABLES -
     //--------------------------------------
     public var earningsLines: [EarningsLine]?
+    public var earningsDict: PayRatesDict?
 //    var TimesheetEarningsLines: Array<TimesheetEarningsLine>?
 //    var DeductionLines:         Array<DeductionLine>?
 //    var LeaveEarningsLines:     Array<LeaveEarningsLine>?
