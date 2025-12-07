@@ -90,7 +90,6 @@ extension EarningsRate: CustomStringConvertible {
         case .perHour: desc.append("/hr")
         case .perUnit(let unit): desc.append("/\(unit)")
         case .other: break
-        case .fixedAmount: break
         }
         desc += ")"
         return desc
@@ -100,7 +99,6 @@ extension EarningsRate: CustomStringConvertible {
 public enum EarningsBasis: Codable, Sendable {
     case perHour
     case perUnit(_: String)
-    case fixedAmount
     case other
 }
 

@@ -133,7 +133,6 @@ extension EarningsRate_Template {
         else {
             return switch rate {
             case .Other: .other
-            case .MarkingPPF: .fixedAmount
             case .ThinkTank: .perUnit("ThinkTank")
             default: .perHour
             }
