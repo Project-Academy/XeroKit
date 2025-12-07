@@ -129,14 +129,23 @@ extension EarningsRate_Template {
     }
     
     public var basis: EarningsBasis {
-        switch rate {
-        case .Other: .other
-        case .ThinkTank: .per("ThinkTank")
-        default: .perHour
+        guard let typeOfUnits
+        else {
+            return switch rate {
+            case .Other: .other
+            case .MarkingPPF: .fixedAmount
+            case .ThinkTank: .perUnit("ThinkTank")
+            default: .perHour
+            }
         }
+        return switch typeOfUnits {
+        case "Hours": .perHour
+        default: .perUnit(typeOfUnits)
+        }
+        
     }
 }
-public enum PayRate: String, CustomStringConvertible {
+public enum PayRate: String, Codable, Sendable, CustomStringConvertible {
     case Teaching
     case Tutoring
     case ThinkTank

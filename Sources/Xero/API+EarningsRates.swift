@@ -62,7 +62,8 @@ extension PayRatesDict: CustomStringConvertible {
             desc += "\(rate.key): \(rate.value.value.formatted(.currency(code: "AUD")))"
             switch rate.value.basis {
             case .perHour: desc.append("/hr")
-            case .per(let unit): desc.append("/\(unit)")
+            case .perUnit(let unit): desc.append("/\(unit)")
+            case .fixedAmount: break
             case .other: break
             }
             desc.append(", ")
@@ -71,7 +72,7 @@ extension PayRatesDict: CustomStringConvertible {
         return desc
     }
 }
-public struct EarningsRate {
+public struct EarningsRate: Codable, Sendable {
     public var rate: PayRate
     public var basis: EarningsBasis
     public var value: Decimal
@@ -87,17 +88,19 @@ extension EarningsRate: CustomStringConvertible {
         desc += "\(rate)(\(value.formatted(.currency(code: "AUD")))"
         switch basis {
         case .perHour: desc.append("/hr")
-        case .per(let unit): desc.append("/\(unit)")
+        case .perUnit(let unit): desc.append("/\(unit)")
         case .other: break
+        case .fixedAmount: break
         }
         desc += ")"
         return desc
     }
 }
 
-public enum EarningsBasis {
+public enum EarningsBasis: Codable, Sendable {
     case perHour
-    case per(_: String)
+    case perUnit(_: String)
+    case fixedAmount
     case other
 }
 
