@@ -94,12 +94,38 @@ extension EarningsRate: CustomStringConvertible {
         return desc
     }
 }
-
-public enum EarningsBasis: Codable, Sendable {
+extension EarningsRate: Equatable {
+    public static func == (lhs: EarningsRate, rhs: EarningsRate) -> Bool {
+      return lhs.value == rhs.value
+        && lhs.basis == rhs.basis
+        && lhs.rate == rhs.rate
+    }
+}
+public enum EarningsBasis: Codable, Sendable, Equatable {
     case perHour
     case perUnit(_: String)
     case other
+    
+    public static func == (lhs: EarningsBasis, rhs: EarningsBasis) -> Bool {
+      switch (lhs, rhs) {
+        case (.perHour, .perHour):
+          return true
+        case (.perUnit(let unitL), .perUnit(let unitR)):
+          return unitL == unitR
+        case (.other, .other):
+          return true
+      
+        // If none of the above match, then we are just left with the hetrogenous cases
+        case (.perHour, _), (.perUnit(_), _), (.other, _):
+          return false
+      }
+    }
 }
+
+
+
+
+
 
 
 
