@@ -132,8 +132,8 @@ extension EarningsRate_Template {
         guard let typeOfUnits
         else {
             return switch rate {
-            case .Other: .other
             case .ThinkTank: .perUnit("ThinkTank")
+            case .Other: .perHour
             default: .perHour
             }
         }

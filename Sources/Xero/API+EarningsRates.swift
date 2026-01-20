@@ -72,10 +72,26 @@ extension PayRatesDict: CustomStringConvertible {
     }
 }
 public struct EarningsRate: Codable, Sendable {
+    
+    //--------------------------------------
+    // MARK: - VARIABLES -
+    //--------------------------------------
     public var rate: PayRate
     public var basis: EarningsBasis
     public var value: Decimal
     
+    //--------------------------------------
+    // MARK: - INITIALISER -
+    //--------------------------------------
+    public init(rate: PayRate, basis: EarningsBasis, value: Decimal) {
+        self.rate = rate
+        self.basis = basis
+        self.value = value
+    }
+    
+    //--------------------------------------
+    // MARK: - FUNCTIONS -
+    //--------------------------------------
     public static func fetchRates(employeeId: String?) async throws -> PayRatesDict {
         guard let employeeId else { return [:] }
         return try await EarningsRate_Template.payRates(for: employeeId)
