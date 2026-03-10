@@ -98,20 +98,45 @@ public struct Xero: Tapioca {
             if let remaining = response.headers?["x-daylimit-remaining"] as? String {
                 print("Remaining calls for today: \(remaining)")
             }
-            if let retryAfter = response.headers?["retry-after"] as? String,
-               let seconds = Int(retryAfter) {
-                print("Rate limit hit, trying again in \(retryAfter) seconds.")
+            guard let retryAfter = response.headers?["retry-after"] as? String,
+                let seconds = Int(retryAfter)
+            else { throw HTTPError.rateLimited(retryAfter: 0) }
+
+            switch request.retryPolicy {
+            case .noRetry, .retryWithLimit(maxAttempts: ...0):
+                print("Rate limit hit")
+                throw HTTPError.rateLimited(retryAfter: seconds)
+            case .retryWithLimit(maxAttempts: let n):
+                print("Rate limit hit, trying again after \(seconds)")
+                var next = request
+                next.retryPolicy = .retryWithLimit(maxAttempts: n - 1)
+                try await Task.sleep(for: .seconds(seconds))
+                return try await self.response(for: next)
+            case .retry:
+                print("Rate limit hit, trying again after \(seconds)")
                 try await Task.sleep(for: .seconds(seconds))
                 return try await self.response(for: request)
             }
         case 500:
-            print("Error 500, retrying in 3 seconds.")
-            try await Task.sleep(for: .seconds(3))
-            return try await self.response(for: request)
+            switch request.retryPolicy {
+            case .noRetry, .retryWithLimit(maxAttempts: ...0):
+                print("Error 500")
+                throw HTTPError.otherError(statusCode: 500)
+            case .retryWithLimit(maxAttempts: let n):
+                print("Error 500, retrying in 3 seconds")
+                var next = request
+                next.retryPolicy = .retryWithLimit(maxAttempts: n - 1)
+                try await Task.sleep(for: .seconds(3))
+                return try await self.response(for: next)
+            case .retry:
+                print("Error 500, retrying in 3 seconds")
+                try await Task.sleep(for: .seconds(3))
+                return try await self.response(for: request)
+            }
         default:
             break
         }
-        
+
         return response
     }
 }

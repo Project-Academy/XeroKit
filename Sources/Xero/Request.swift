@@ -24,6 +24,7 @@ public struct Request: APIRequest {
     public var accepts: ContentType = .JSON
     public var content: ContentType = .JSON
     
+    public var retryPolicy: RetryPolicy = .retry
     public var params: [String: (any Sendable)] = [:]
     public var paramTransformer: (@Sendable ([String: Any]) throws -> Data) = { params in
         try JSONSerialization.data(withJSONObject: params, options: .prettyPrinted)
@@ -63,6 +64,11 @@ public struct Request: APIRequest {
             toAdd["page"] = 1
         }
         return params(toAdd)
+    }
+    public func retryPolicy(_ policy: RetryPolicy) -> Self {
+        var request = self
+        request.retryPolicy = policy
+        return request
     }
 }
 
