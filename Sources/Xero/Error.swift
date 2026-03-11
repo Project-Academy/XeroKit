@@ -24,3 +24,8 @@ public enum FetchError: Error, XeroError {
 public enum EarningsRatesError: Error, XeroError {
     case noEarningsLines
 }
+
+public enum HTTPError: Error, XeroError {
+    case rateLimited(retryAfter: Int)
+    case otherError(statusCode: Int)
+}
