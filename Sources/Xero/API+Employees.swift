@@ -12,13 +12,15 @@ extension Employee {
     
     public static func list() async throws -> [Employee] {
         try await API.Employees.list.GET
+            .retryPolicy(.retry)
             .response()
             .asType(EmployeesResponse.self)
             .employees
     }
     
-    public static func with(id: String) async throws -> Employee {
+    public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> Employee {
         let response = try await API.Employees.with(id).GET
+            .retryPolicy(policy)
             .response()
             .asType(EmployeesResponse.self)
         let employees = response.employees
@@ -32,9 +34,9 @@ extension Employee {
         return employee
     }
     
-    public func fetchRates() async throws -> PayRatesDict {
+    public func fetchRates(retryPolicy policy: RetryPolicy = .retry) async throws -> PayRatesDict {
         guard let employeeId else { fatalError() }
-        return try await EarningsRate_Template.payRates(for: employeeId)
+        return try await EarningsRate_Template.payRates(for: employeeId, retryPolicy: policy)
     }
 }
 
