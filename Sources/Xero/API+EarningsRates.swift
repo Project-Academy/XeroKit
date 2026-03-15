@@ -9,8 +9,9 @@ import Foundation
 
 extension EarningsRate_Template {
     
-    public static func list() async throws -> [EarningsRate_Template] {
+    public static func list(retryPolicy policy: RetryPolicy = .retry) async throws -> [EarningsRate_Template] {
         let response = try await API.EarningsRates.list.GET
+            .retryPolicy(policy)
             .response()
             .asType(EarningsRatesResponse.self)
         
@@ -22,24 +23,25 @@ extension EarningsRate_Template {
     
     public static func with(id: String) async throws -> EarningsRate_Template {
         let rate = try await API.EarningsRates.with(id).GET
+            .retryPolicy(.retry)
             .response()
             .asType(SingleEarningsRatesResponse.self)
             .earningsRate
-        
+
         return rate
     }
     
-    public static func payRates(for empId: String) async throws -> PayRatesDict {
+    public static func payRates(for empId: String, retryPolicy policy: RetryPolicy = .retry) async throws -> PayRatesDict {
         var rates: PayRatesDict = [:]
-        
+
         let _ratesArray: [EarningsRate_Template]
         if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
            let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data) {
             _ratesArray = ratesList
-        } else { _ratesArray = try await list() }
+        } else { _ratesArray = try await list(retryPolicy: policy) }
         let allRates = _ratesArray.filter { $0.rate != .Other }
-        
-        let employee = try await Employee.with(id: empId)
+
+        let employee = try await Employee.with(id: empId, retryPolicy: policy)
         guard let earningsLines = employee.payTemplate?.earnings
         else { throw EarningsRatesError.noEarningsLines }
         
@@ -92,9 +94,9 @@ public struct EarningsRate: Codable, Sendable {
     //--------------------------------------
     // MARK: - FUNCTIONS -
     //--------------------------------------
-    public static func fetchRates(employeeId: String?) async throws -> PayRatesDict {
+    public static func fetchRates(employeeId: String?, retryPolicy policy: RetryPolicy = .retry) async throws -> PayRatesDict {
         guard let employeeId else { return [:] }
-        return try await EarningsRate_Template.payRates(for: employeeId)
+        return try await EarningsRate_Template.payRates(for: employeeId, retryPolicy: policy)
     }
 }
 extension EarningsRate: CustomStringConvertible {
