@@ -10,7 +10,7 @@ import Foundation
 
 public enum Status: String, Codable {
     /// Employee with no Termination Date.
-    case ACTIVE
+    case active     = "ACTIVE"
     /// Employee with a Termination Date.
-    case TERMINATED
+    case terminated = "TERMINATED"
 }

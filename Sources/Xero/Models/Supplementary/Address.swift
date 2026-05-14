@@ -20,7 +20,26 @@ public struct Address: Codable {
     public var postCode:        String
     /// Country of HomeAddress
     public var country:         Country
-    
+
+    //--------------------------------------
+    // MARK: - INIT -
+    //--------------------------------------
+    public init(
+        addressLine1: String,
+        addressLine2: String? = nil,
+        city:         String,
+        state:        AusState,
+        postCode:     String,
+        country:      Country
+    ) {
+        self.addressLine1 = addressLine1
+        self.addressLine2 = addressLine2
+        self.city         = city
+        self.state        = state
+        self.postCode     = postCode
+        self.country      = country
+    }
+
     //--------------------------------------
     // MARK: - CODING KEYS -
     //--------------------------------------

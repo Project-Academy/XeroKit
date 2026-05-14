@@ -6,6 +6,6 @@
 import Foundation
 
 public enum EmploymentType: String, Codable {
-    case EMPLOYEE
-    case CONTRACTOR
+    case employee   = "EMPLOYEE"
+    case contractor = "CONTRACTOR"
 }

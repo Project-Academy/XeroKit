@@ -9,11 +9,11 @@
 import Foundation
 
 public enum TaxScaleType: String, Codable {
-    case REGULAR
-    case ACTORSARTISTSENTERTAINERS
-    case HORTICULTURISTORSHEARER
-    case SENIORORPENSIONER
-    case WORKINGHOLIDAYMAKER
-    /// Only valid when `ResidencyStatus` is `FOREIGNRESIDENT`.
-    case FOREIGN
+    case regular                  = "REGULAR"
+    case actorsArtistsEntertainers = "ACTORSARTISTSENTERTAINERS"
+    case horticulturistOrShearer  = "HORTICULTURISTORSHEARER"
+    case seniorOrPensioner        = "SENIORORPENSIONER"
+    case workingHolidayMaker      = "WORKINGHOLIDAYMAKER"
+    /// Only valid when `ResidencyStatus` is `.foreignResident`.
+    case foreign                  = "FOREIGN"
 }

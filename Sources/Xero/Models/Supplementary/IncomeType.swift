@@ -6,9 +6,9 @@
 import Foundation
 
 public enum IncomeType: String, Codable {
-    case SALARYANDWAGES
-    case WORKINGHOLIDAYMAKER
-    case NONEMPLOYEE
-    case CLOSELYHELDPAYEES
-    case LABOURHIRE
+    case salaryAndWages       = "SALARYANDWAGES"
+    case workingHolidayMaker  = "WORKINGHOLIDAYMAKER"
+    case nonEmployee          = "NONEMPLOYEE"
+    case closelyHeldPayees    = "CLOSELYHELDPAYEES"
+    case labourHire           = "LABOURHIRE"
 }

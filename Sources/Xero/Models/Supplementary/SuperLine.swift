@@ -58,22 +58,22 @@ public struct SuperLine: Codable {
     //--------------------------------------
     public enum ContributionType: String, Codable {
         /// Mandatory employer contribution.
-        case SGC
+        case sgc                = "SGC"
         /// Pre-tax reportable employer super contribution (RESC on payment summaries).
-        case SALARYSACRIFICE
+        case salarySacrifice    = "SALARYSACRIFICE"
         /// Additional employer super contribution (RESC on payment summaries).
-        case EMPLOYERADDITIONAL
+        case employerAdditional = "EMPLOYERADDITIONAL"
         /// Post-tax employee super contribution.
-        case EMPLOYEE
+        case employee           = "EMPLOYEE"
     }
 
     public enum CalculationType: String, Codable {
         /// Fixed-rate contribution (only valid for voluntary super).
-        case FIXEDAMOUNT
+        case fixedAmount         = "FIXEDAMOUNT"
         /// Percentage of earnings.
-        case PERCENTAGEOFEARNINGS
+        case percentageOfEarnings = "PERCENTAGEOFEARNINGS"
         /// SGC statutory rate.
-        case STATUTORY
+        case statutory           = "STATUTORY"
     }
 }
 
