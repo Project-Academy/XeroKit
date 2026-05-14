@@ -8,7 +8,7 @@
 import Foundation
 
 @propertyWrapper
-public struct DateString: Codable, Equatable, CustomStringConvertible {
+public struct DateString: Codable, Equatable, Sendable, CustomStringConvertible {
     
     // Store the original raw string
     private var _rawString: String?

@@ -2,7 +2,7 @@
 //  API+SuperFunds.swift
 //  XeroKit
 //
-//  Read API surface for SuperFund. `fetchAll()` returns every super
+//  Read API surface for SuperFund. `list()` returns every super
 //  fund the Xero org has on record — typically a small set used by
 //  the consumer to map fund IDs to display names.
 //
@@ -21,7 +21,7 @@ extension SuperFund {
             .retryPolicy(policy)
             .response()
             .asType(SuperFundsResponse.self)
-            .superFunds
+            .resource
     }
 }
 
@@ -46,20 +46,7 @@ extension API {
 //--------------------------------------
 // MARK: - RESPONSE -
 //--------------------------------------
-internal struct SuperFundsResponse: Decodable, XeroV1Response {
-    let superFunds: [SuperFund]
-
-    let id:      String
-    let source:  String
-    let status:  String
-    @DateString var utcDate: Date?
-
-    enum CodingKeys: String, CodingKey {
-        case id      = "Id"
-        case source  = "ProviderName"
-        case status  = "Status"
-        case utcDate = "DateTimeUTC"
-
-        case superFunds = "SuperFunds"
-    }
+internal struct SuperFundsResponseKey: XeroResponseKey {
+    static let jsonKey = "SuperFunds"
 }
+internal typealias SuperFundsResponse = XeroV1Envelope<[SuperFund], SuperFundsResponseKey>

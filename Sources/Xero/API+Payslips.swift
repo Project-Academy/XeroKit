@@ -13,46 +13,38 @@ extension Payslip {
      POSTs an updated set of EarningsLines for the Payslip identified by
      `id`. Returns the updated Payslip echoed back by Xero in the response.
 
-     Note: Xero's POST `/Payslip/<id>` envelope uses a plural `Payslips`
-     array (one element), unlike the GET on the same URL which returns a
-     singular `Payslip` key — so this method decodes a separate
-     `PayslipUpdateResponse`.
+     - Note: Xero's POST `/Payslip/<id>` envelope uses a plural `Payslips`
+       array (one element), unlike the GET on the same URL which returns
+       a singular `Payslip` key — hence the separate `PayslipUpdateResponse`.
      */
     public static func update(id: String, with earningsLines: [EarningsLine], retryPolicy policy: RetryPolicy = .retry) async throws -> Payslip {
         let lines = earningsLines.compactMap(\.json)
-        let decoded = try await API.Payslips.with(id).POST
+        let payslips = try await API.Payslips.with(id).POST
             .params(["EarningsLines": lines])
-            .paramTransformer { dict in
-                try JSONSerialization.data(withJSONObject: [dict], options: .prettyPrinted)
-            }
+            .arrayWrappedJSONBody()
             .retryPolicy(policy)
             .response()
             .asType(PayslipUpdateResponse.self)
-        guard let slip = decoded.payslips.first
+            .resource
+        guard let slip = payslips.first
         else { throw FetchError.noItemsFound }
         return slip
     }
 
     /**
-     Retrieve a Payslip given the ID
-
-     This modifier can be used to set common headers like `Authorization` or custom headers.
-     The header is stored internally and applied to the `urlRequest` when `build()` is called.
-
-     - Parameters:
-       - id: The PayslipId you wish to fetch from the Xero API.
-       - policy: The retry policy to apply to API requests. Defaults to `.retry`.
-     - Returns: A Xero Payslip object corresponding to the payslip ID.
+     Retrieves the Payslip with the given `id`, decorating it with a
+     `earningsDict` populated by mapping each `EarningsLine.rateId` to
+     a typed `PayRate` via the cached `EarningsRate_Template` list.
      */
     public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> Payslip {
         var slip = try await API.Payslips.with(id).GET
             .retryPolicy(policy)
             .response()
             .asType(PayslipsResponse.self)
-            .slip
+            .resource
 
         let _ratesArray: [EarningsRate_Template]
-        if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
+        if let data = UserDefaults.standard.data(forKey: EarningsRate_Template.cacheKey),
            let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data) {
             _ratesArray = ratesList
         } else { _ratesArray = try await EarningsRate_Template.list(retryPolicy: policy) }
@@ -64,12 +56,14 @@ extension Payslip {
             earningsDict[eRate.rate] = .init(rate: eRate.rate, basis: eRate.basis, value: rateValue)
         }
         slip.earningsDict = earningsDict
-        
+
         return slip
     }
-    
 }
 
+//--------------------------------------
+// MARK: - ENDPOINTS -
+//--------------------------------------
 extension API {
     enum Payslips: Endpoints {
         typealias API = Xero
@@ -85,40 +79,17 @@ extension API {
     }
 }
 
-/// GET `/Payslip/<id>` envelope. Singular `Payslip` key.
-struct PayslipsResponse: Decodable, XeroV1Response {
-    let slip: Payslip
-
-    public let id: String
-    public let source: String
-    public let status: String
-    @DateString var utcDate: Date?
-
-    enum CodingKeys: String, CodingKey {
-        case id = "Id"
-        case source = "ProviderName"
-        case status = "Status"
-        case utcDate = "DateTimeUTC"
-
-        case slip = "Payslip"
-    }
+//--------------------------------------
+// MARK: - RESPONSE -
+//--------------------------------------
+/// GET `/Payslip/<id>` — envelope key is singular `Payslip`.
+internal struct PayslipResponseKey: XeroResponseKey {
+    static let jsonKey = "Payslip"
 }
-
-/// POST `/Payslip/<id>` envelope. Plural `Payslips` array (one element).
-struct PayslipUpdateResponse: Decodable, XeroV1Response {
-    let payslips: [Payslip]
-
-    public let id: String
-    public let source: String
-    public let status: String
-    @DateString var utcDate: Date?
-
-    enum CodingKeys: String, CodingKey {
-        case id = "Id"
-        case source = "ProviderName"
-        case status = "Status"
-        case utcDate = "DateTimeUTC"
-
-        case payslips = "Payslips"
-    }
+/// POST `/Payslip/<id>` — envelope key is plural `Payslips`, even though
+/// the array always contains exactly one element.
+internal struct PayslipsResponseKey: XeroResponseKey {
+    static let jsonKey = "Payslips"
 }
+internal typealias PayslipsResponse       = XeroV1Envelope<Payslip,   PayslipResponseKey>
+internal typealias PayslipUpdateResponse  = XeroV1Envelope<[Payslip], PayslipsResponseKey>

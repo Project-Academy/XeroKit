@@ -14,7 +14,7 @@ import Foundation
  On Xero, this is where we fetch and store a TM's pay rates.
 
  */
-public struct PayTemplate: Codable {
+public struct PayTemplate: Codable, Sendable {
     public var earnings: [EarningsLine]?
     public var superLines: [SuperLine]?
 //    public var deductions: [DeductionLine]
@@ -41,7 +41,7 @@ public struct PayTemplate: Codable {
     }
 }
 
-public struct EarningsLine: Codable, Equatable {
+public struct EarningsLine: Codable, Equatable, Sendable {
     /// Xero earnings rate identifier.
     /// Corresponds to ``EarningsRate_Template``'s ``rateId`` property.
     public var rateId: String?

@@ -8,8 +8,14 @@
 import Foundation
 
 
-public struct EarningsRate_Template: Codable {
-    
+public struct EarningsRate_Template: Codable, Sendable {
+
+    /// UserDefaults key under which `EarningsRate_Template.list()`
+    /// caches the most recent fetch. Exposed so consumers can read
+    /// the cache directly (e.g. for `.rate` lookups on `EarningsLine`)
+    /// without depending on a magic string.
+    public static let cacheKey: String = "XEROKIT_EARNINGS_RATES_LIST"
+
     //--------------------------------------
     // MARK: - VARIABLES -
     //--------------------------------------

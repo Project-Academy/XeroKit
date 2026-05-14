@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum AllowanceCategory: String, Codable {
+public enum AllowanceCategory: String, Codable, Sendable {
     case nondeductible = "NONDEDUCTIBLE"
     case uniform = "UNIFORM"
     case privateVehicle = "PRIVATEVEHICLE"

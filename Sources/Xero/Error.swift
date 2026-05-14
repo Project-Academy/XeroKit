@@ -14,6 +14,7 @@ public enum AuthError: Error, XeroError {
 public enum EmployeesError: Error, XeroError {
     case noEmployeesFound
     case multipleEmployeesFound
+    case missingEmployeeID
 }
 
 public enum FetchError: Error, XeroError {

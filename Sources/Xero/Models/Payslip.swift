@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Payslip: Codable {
+public struct Payslip: Codable, Sendable {
     
     //--------------------------------------
     // MARK: - ID VARIABLES -

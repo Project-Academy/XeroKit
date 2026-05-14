@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum EarningsType: String, Codable {
+public enum EarningsType: String, Codable, Sendable {
     case ordinary = "OrdinaryTimeEarnings"
     case overtime = "OvertimeEarnings"
     /// EarningsRates with EarningsType ALLOWANCE also require an ALLOWANCETYPE value.

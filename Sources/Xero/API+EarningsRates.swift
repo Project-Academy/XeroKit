@@ -8,34 +8,42 @@
 import Foundation
 
 extension EarningsRate_Template {
-    
+
+    /**
+     Fetches every active EarningsRate from Xero.
+
+     **Side effect:** the result is encoded to JSON and cached in
+     `UserDefaults` under `EarningsRate_Template.cacheKey` so other
+     XeroKit accessors (notably `EarningsLine.rate`) can resolve a
+     `rateId` to a typed `PayRate` without an extra round trip.
+     */
     public static func list(retryPolicy policy: RetryPolicy = .retry) async throws -> [EarningsRate_Template] {
-        let response = try await API.EarningsRates.list.GET
+        let rates = try await API.EarningsRates.list.GET
             .retryPolicy(policy)
             .response()
             .asType(EarningsRatesResponse.self)
-        
-        let data = try JSONEncoder().encode(response.earningsRates)
-        UserDefaults.standard.set(data, forKey: "XEROKIT_EARNINGS_RATES_LIST")
-        
-        return response.earningsRates
-    }
-    
-    public static func with(id: String) async throws -> EarningsRate_Template {
-        let rate = try await API.EarningsRates.with(id).GET
-            .retryPolicy(.retry)
-            .response()
-            .asType(SingleEarningsRatesResponse.self)
-            .earningsRate
+            .resource
 
-        return rate
+        if let data = try? JSONEncoder().encode(rates) {
+            UserDefaults.standard.set(data, forKey: EarningsRate_Template.cacheKey)
+        }
+
+        return rates
     }
-    
+
+    public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> EarningsRate_Template {
+        try await API.EarningsRates.with(id).GET
+            .retryPolicy(policy)
+            .response()
+            .asType(SingleEarningsRateResponse.self)
+            .resource
+    }
+
     public static func payRates(for empId: String, retryPolicy policy: RetryPolicy = .retry) async throws -> PayRatesDict {
         var rates: PayRatesDict = [:]
 
         let _ratesArray: [EarningsRate_Template]
-        if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
+        if let data = UserDefaults.standard.data(forKey: EarningsRate_Template.cacheKey),
            let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data) {
             _ratesArray = ratesList
         } else { _ratesArray = try await list(retryPolicy: policy) }
@@ -43,18 +51,21 @@ extension EarningsRate_Template {
         let employee = try await Employee.with(id: empId, retryPolicy: policy)
         guard let earningsLines = employee.payTemplate?.earnings
         else { throw EarningsRatesError.noEarningsLines }
-        
+
         for rate in _ratesArray {
             guard let line = earningsLines.first(where: { $0.rateId == rate.rateId }),
                   let rateValue = line.rateValue
             else { continue }
             rates[rate.rate] = .init(rate: rate.rate, basis: rate.basis, value: rateValue)
         }
-        
+
         return rates
     }
 }
 
+//--------------------------------------
+// MARK: - PAY RATES DICT -
+//--------------------------------------
 public typealias PayRatesDict = [PayRate: EarningsRate]
 extension PayRatesDict {
     public var description: String {
@@ -72,27 +83,22 @@ extension PayRatesDict {
         return desc
     }
 }
+
+//--------------------------------------
+// MARK: - EARNINGS RATE -
+//--------------------------------------
 public struct EarningsRate: Codable, Sendable {
-    
-    //--------------------------------------
-    // MARK: - VARIABLES -
-    //--------------------------------------
+
     public var rate: PayRate
     public var basis: EarningsBasis
     public var value: Decimal
-    
-    //--------------------------------------
-    // MARK: - INITIALISER -
-    //--------------------------------------
+
     public init(rate: PayRate, basis: EarningsBasis, value: Decimal) {
         self.rate = rate
         self.basis = basis
         self.value = value
     }
-    
-    //--------------------------------------
-    // MARK: - FUNCTIONS -
-    //--------------------------------------
+
     public static func fetchRates(employeeId: String?, retryPolicy policy: RetryPolicy = .retry) async throws -> PayRatesDict {
         guard let employeeId else { return [:] }
         return try await EarningsRate_Template.payRates(for: employeeId, retryPolicy: policy)
@@ -111,131 +117,42 @@ extension EarningsRate: CustomStringConvertible {
         return desc
     }
 }
-extension EarningsRate: Equatable {
-    public static func == (lhs: EarningsRate, rhs: EarningsRate) -> Bool {
-      return lhs.value == rhs.value
-        && lhs.basis == rhs.basis
-        && lhs.rate == rhs.rate
-    }
-}
+extension EarningsRate: Equatable {}
+
 public enum EarningsBasis: Codable, Sendable, Equatable {
     case perHour
     case perUnit(_: String)
     case other
-    
-    public static func == (lhs: EarningsBasis, rhs: EarningsBasis) -> Bool {
-      switch (lhs, rhs) {
-        case (.perHour, .perHour):
-          return true
-        case (.perUnit(let unitL), .perUnit(let unitR)):
-          return unitL == unitR
-        case (.other, .other):
-          return true
-      
-        // If none of the above match, then we are just left with the hetrogenous cases
-        case (.perHour, _), (.perUnit(_), _), (.other, _):
-          return false
-      }
-    }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//--------------------------------------
+// MARK: - ENDPOINTS -
+//--------------------------------------
 extension API {
     internal enum EarningsRates: Endpoints {
         typealias API = Xero
         static var base: URL = API.baseURL.appending(path: "2.0/earningsRates")
-        
+
         case list
         case with(_ id: String)
-        
+
         var path: URL {
             switch self {
-            case .list: Self.base
+            case .list:         Self.base
             case .with(let id): Self.base.appending(path: id)
             }
         }
     }
 }
 
-
-
-
-
-struct EarningsRatesResponse: Decodable, CustomStringConvertible, XeroV2Response {
-    
-    public let earningsRates: [EarningsRate_Template]
-    
-    // Default Response Variables
-    public let id: String
-    public let status: String
-    public let source: String
-    @DateString var dateUTC: Date?
-    
-    public let pagination: [String:Int]?
-    
-    // Custom Description
-    public var description: String {
-        let rates = earningsRates
-            .compactMap { "\($0.name), ID: \($0.rateId), DefaultRate: \(($0.ratePerUnit ?? 0).formatted(.currency(code: "AUD")))" }
-            .joined(separator: ",\n\t")
-
-        return "EarningsRatesResponse(id: \(id), status: \(status), Source: \(source), dateUTC: \(dateUTC ?? .distantPast)), pagination: \(pagination ?? [:])\nEarningsRates (\(earningsRates.count)): [\n\t\(rates)\n]"
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case status = "httpStatusCode"
-        case source = "providerName"
-        case dateUTC = "dateTimeUTC"
-        case pagination
-        
-        case earningsRates
-    }
+//--------------------------------------
+// MARK: - RESPONSE -
+//--------------------------------------
+internal struct EarningsRatesResponseKey: XeroResponseKey {
+    static let jsonKey = "earningsRates"
 }
-
-struct SingleEarningsRatesResponse: Decodable, XeroV2Response {
-    
-    public let earningsRate: EarningsRate_Template
-    
-    // Default Response Variables
-    public let id: String
-    public let status: String
-    public let source: String
-    @DateString var dateUTC: Date?
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case status = "httpStatusCode"
-        case source = "providerName"
-        case dateUTC = "dateTimeUTC"
-        
-        case earningsRate
-    }
+internal struct SingleEarningsRateResponseKey: XeroResponseKey {
+    static let jsonKey = "earningsRate"
 }
+internal typealias EarningsRatesResponse      = XeroV2Envelope<[EarningsRate_Template], EarningsRatesResponseKey>
+internal typealias SingleEarningsRateResponse = XeroV2Envelope<EarningsRate_Template, SingleEarningsRateResponseKey>

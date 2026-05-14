@@ -9,7 +9,7 @@
 
 import Foundation
 
-public struct PayRun: Codable {
+public struct PayRun: Codable, Sendable {
 
     //--------------------------------------
     // MARK: - IDS / STATE -
@@ -82,7 +82,7 @@ public struct PayRun: Codable {
     //--------------------------------------
     // MARK: - STATUS -
     //--------------------------------------
-    public enum Status: String, Codable {
+    public enum Status: String, Codable, Sendable {
         case DRAFT
         case POSTED
     }

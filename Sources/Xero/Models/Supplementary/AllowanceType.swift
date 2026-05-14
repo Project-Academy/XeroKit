@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum AllowanceType: String, Codable {
+public enum AllowanceType: String, Codable, Sendable {
     case car = "CAR"
     case transport = "TRANSPORT"
     case travel = "TRAVEL"

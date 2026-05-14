@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum ETPType: String, Codable {
+public enum ETPType: String, Codable, Sendable {
     case regular = "R"
     case other = "O"
 }

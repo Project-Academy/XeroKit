@@ -10,7 +10,7 @@ import Foundation
 
 public typealias SuperLines = [SuperLine]
 
-public struct SuperLine: Codable {
+public struct SuperLine: Codable, Sendable {
     /// The `SuperMembership` this line contributes to.
     public var superMembershipId:   String?
     public var contributionType:    ContributionType?
@@ -56,7 +56,7 @@ public struct SuperLine: Codable {
     //--------------------------------------
     // MARK: - ENUMS -
     //--------------------------------------
-    public enum ContributionType: String, Codable {
+    public enum ContributionType: String, Codable, Sendable {
         /// Mandatory employer contribution.
         case sgc                = "SGC"
         /// Pre-tax reportable employer super contribution (RESC on payment summaries).
@@ -67,7 +67,7 @@ public struct SuperLine: Codable {
         case employee           = "EMPLOYEE"
     }
 
-    public enum CalculationType: String, Codable {
+    public enum CalculationType: String, Codable, Sendable {
         /// Fixed-rate contribution (only valid for voluntary super).
         case fixedAmount         = "FIXEDAMOUNT"
         /// Percentage of earnings.

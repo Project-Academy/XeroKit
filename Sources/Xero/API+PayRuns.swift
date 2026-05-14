@@ -13,31 +13,12 @@ import Foundation
 
 extension PayRun {
 
-    /**
-     Fetches every PayRun on the Xero org, auto-paginating until the
-     server returns fewer than the per-page max (100). Like
-     `Employee.list`, this is a sequential recursive accumulator —
-     typical orgs have a small handful of PayRuns so this is one or
-     two GETs in practice.
-     */
     public static func list(retryPolicy policy: RetryPolicy = .retry) async throws -> [PayRun] {
-        try await fetchPage(1, accumulated: [], retryPolicy: policy)
-    }
-
-    private static func fetchPage(
-        _ page: Int,
-        accumulated: [PayRun],
-        retryPolicy policy: RetryPolicy
-    ) async throws -> [PayRun] {
-        let pageOfRuns = try await API.PayRuns.list.GET
-            .page(page)
-            .retryPolicy(policy)
-            .response()
-            .asType(PayRunsResponse.self)
-            .payRuns
-        let combined = accumulated + pageOfRuns
-        guard pageOfRuns.count == 100 else { return combined }
-        return try await fetchPage(page + 1, accumulated: combined, retryPolicy: policy)
+        try await Xero.paginated(
+            from: API.PayRuns.list.GET,
+            envelope: PayRunsResponse.self,
+            retryPolicy: policy
+        )
     }
 
     /**
@@ -46,11 +27,12 @@ extension PayRun {
      when you actually need to operate on the contained payslips.
      */
     public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> PayRun {
-        let response = try await API.PayRuns.with(id).GET
+        let runs = try await API.PayRuns.with(id).GET
             .retryPolicy(policy)
             .response()
             .asType(PayRunsResponse.self)
-        guard let run = response.payRuns.first
+            .resource
+        guard let run = runs.first
         else { throw FetchError.noItemsFound }
         return run
     }
@@ -69,28 +51,24 @@ extension PayRun {
             .retryPolicy(policy)
             .response()
             .asType(PayRunsResponse.self)
-            .payRuns
+            .resource
     }
 
     /**
-     Creates a new DRAFT PayRun against the given payroll calendar
-     (`PayrollCalendarID`). Xero returns the created PayRun echoed
-     back with its assigned `payRunId`. Body is the standard
-     `[{ ... }]` array-wrapped form Xero requires for write endpoints.
+     Creates a new DRAFT PayRun against the given payroll calendar.
+     Xero returns the created PayRun echoed back with its assigned
+     `payRunId`. Body uses the standard array-wrapped form via
+     `Request.arrayWrappedJSONBody()`.
      */
-    public static func create(
-        forCalendarId calendarId: String,
-        retryPolicy policy: RetryPolicy = .retry
-    ) async throws -> PayRun {
-        let response = try await API.PayRuns.list.POST
+    public static func create(forCalendarId calendarId: String, retryPolicy policy: RetryPolicy = .retry) async throws -> PayRun {
+        let runs = try await API.PayRuns.list.POST
             .params(["PayrollCalendarID": calendarId])
-            .paramTransformer { dict in
-                try JSONSerialization.data(withJSONObject: [dict], options: .prettyPrinted)
-            }
+            .arrayWrappedJSONBody()
             .retryPolicy(policy)
             .response()
             .asType(PayRunsResponse.self)
-        guard let created = response.payRuns.first
+            .resource
+        guard let created = runs.first
         else { throw FetchError.noItemsFound }
         return created
     }
@@ -119,21 +97,7 @@ extension API {
 //--------------------------------------
 // MARK: - RESPONSE -
 //--------------------------------------
-internal struct PayRunsResponse: Decodable, XeroV1Response {
-    let payRuns: [PayRun]
-
-    // Default response envelope
-    let id:      String
-    let source:  String
-    let status:  String
-    @DateString var utcDate: Date?
-
-    enum CodingKeys: String, CodingKey {
-        case id      = "Id"
-        case source  = "ProviderName"
-        case status  = "Status"
-        case utcDate = "DateTimeUTC"
-
-        case payRuns = "PayRuns"
-    }
+internal struct PayRunsResponseKey: XeroResponseKey {
+    static let jsonKey = "PayRuns"
 }
+internal typealias PayRunsResponse = XeroV1Envelope<[PayRun], PayRunsResponseKey>
