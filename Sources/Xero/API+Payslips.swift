@@ -8,7 +8,30 @@
 import Foundation
 
 extension Payslip {
-    
+
+    /**
+     Replaces the earnings lines on the Payslip identified by `id`.
+     POSTs `{"EarningsLines": [...]}` wrapped in the `[ ... ]` array
+     shape Xero requires for upserts. Returns the updated Payslip
+     echoed back by the server.
+     */
+    public static func update(
+        id: String,
+        with earningsLines: [EarningsLine],
+        retryPolicy policy: RetryPolicy = .retry
+    ) async throws -> Payslip {
+        let lines = earningsLines.compactMap(\.json)
+        return try await API.Payslips.with(id).POST
+            .params(["EarningsLines": lines])
+            .paramTransformer { dict in
+                try JSONSerialization.data(withJSONObject: [dict], options: .prettyPrinted)
+            }
+            .retryPolicy(policy)
+            .response()
+            .asType(PayslipsResponse.self)
+            .slip
+    }
+
     /**
      Retrieve a Payslip given the ID
 

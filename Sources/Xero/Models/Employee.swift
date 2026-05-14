@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Employee: Decodable {
+public struct Employee: Codable {
     
     public var employeeId: String?
     
@@ -62,6 +62,7 @@ public struct Employee: Decodable {
         
         case startDate = "StartDate"
         case payCalID = "PayrollCalendarID"
+        case taxDeclaration = "TaxDeclaration"
         case bankAccounts = "BankAccounts"
         case payTemplate = "PayTemplate"
     }

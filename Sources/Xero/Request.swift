@@ -70,6 +70,26 @@ public struct Request: APIRequest {
         request.retryPolicy = policy
         return request
     }
+
+    /**
+     Replace the param-to-body transformer with a custom closure.
+     Used for Xero's array-wrapped POST bodies (Employees / Payslip /
+     SuperFunds) — Xero wants `[{...}]` even when posting a single
+     entity, so the transformer wraps the params dict in an array
+     before serialising:
+
+     ```swift
+     .params(employee.json)
+     .paramTransformer { dict in
+         try JSONSerialization.data(withJSONObject: [dict], options: .prettyPrinted)
+     }
+     ```
+     */
+    public func paramTransformer(_ transform: @escaping (@Sendable ([String: Any]) throws -> Data)) -> Self {
+        var request = self
+        request.paramTransformer = transform
+        return request
+    }
 }
 
 public enum SortDirection: String {
