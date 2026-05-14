@@ -44,7 +44,11 @@ extension Payslip {
      - Returns: A Xero Payslip object corresponding to the payslip ID.
      */
     public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> Payslip {
-        let response = try await API.Payslips.with(id).GET
+        // Xero's GET expects `/Payslip?ID=<guid>` (query param), not
+        // `/Payslip/<guid>` (path). The former returns `{"Payslip": ...}`;
+        // the latter returns a different envelope that doesn't decode here.
+        let response = try await API.Payslips.list.GET
+            .params(["ID": id])
             .retryPolicy(policy)
             .response()
 
@@ -75,11 +79,16 @@ extension API {
     enum Payslips: Endpoints {
         typealias API = Xero
         static var base: URL = API.baseURL.appending(path: "1.0/Payslip")
-        
+
+        /// `/Payslip` — GET uses this with `?ID=<guid>` query param to
+        /// fetch a single Payslip (returns `{"Payslip": ...}`).
+        case list
+        /// `/Payslip/<guid>` — POST uses this for upserts.
         case with(_ id: String)
-        
+
         var path: URL {
             switch self {
+            case .list:         Self.base
             case .with(let id): Self.base.appending(path: id)
             }
         }
