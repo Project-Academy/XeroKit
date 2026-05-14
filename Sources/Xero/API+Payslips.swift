@@ -21,15 +21,26 @@ extension Payslip {
         retryPolicy policy: RetryPolicy = .retry
     ) async throws -> Payslip {
         let lines = earningsLines.compactMap(\.json)
-        return try await API.Payslips.with(id).POST
+        let response = try await API.Payslips.with(id).POST
             .params(["EarningsLines": lines])
             .paramTransformer { dict in
                 try JSONSerialization.data(withJSONObject: [dict], options: .prettyPrinted)
             }
             .retryPolicy(policy)
             .response()
-            .asType(PayslipsResponse.self)
-            .slip
+
+        do {
+            return try response.asType(PayslipsResponse.self).slip
+        } catch {
+            // Diagnostic: dump the raw response body so we can see what
+            // Xero actually returned. Remove once the envelope shape
+            // is understood.
+            let body = String(data: response.data, encoding: .utf8) ?? "<non-utf8 body>"
+            print("[XeroKit] Payslip.update(id: \(id)) decode failed.")
+            print("  Status: \(response.statusCode ?? -1)")
+            print("  Body: \(body)")
+            throw error
+        }
     }
 
     /**
