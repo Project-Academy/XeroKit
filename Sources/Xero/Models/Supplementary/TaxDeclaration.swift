@@ -21,7 +21,9 @@ public struct TaxDeclaration: Codable {
 
     public var employeeId: String?
     public var employmentBasis: EmploymentBasis
-    public var exemptionType: TFNExemptionType
+    /// Optional — only set when the employee hasn't quoted a TFN.
+    /// Mutually exclusive with `taxFileNumber` in practice.
+    public var exemptionType: TFNExemptionType?
 
     //--------------------------------------
     // MARK: - STP 2 / RESIDENCY -
@@ -40,7 +42,7 @@ public struct TaxDeclaration: Codable {
         thresholdClaimed: Bool,
         hasLoansOrDebt: Bool,
         employmentBasis: EmploymentBasis,
-        exemptionType: TFNExemptionType,
+        exemptionType: TFNExemptionType? = nil,
         taxFileNumber: String? = nil,
         employeeId: String? = nil,
         taxScaleType: TaxScaleType? = nil,
