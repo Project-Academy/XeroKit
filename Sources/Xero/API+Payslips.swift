@@ -44,17 +44,23 @@ extension Payslip {
      - Returns: A Xero Payslip object corresponding to the payslip ID.
      */
     public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> Payslip {
-        // Xero's GET expects `/Payslip?ID=<guid>` (query param), not
-        // `/Payslip/<guid>` (path). The former returns `{"Payslip": ...}`;
-        // the latter returns a different envelope that doesn't decode here.
-        let response = try await API.Payslips.list.GET
-            .params(["ID": id])
+        let response = try await API.Payslips.with(id).GET
             .retryPolicy(policy)
             .response()
 
-        var slip = try response
-            .asType(PayslipsResponse.self)
-            .slip
+        var slip: Payslip
+        do {
+            slip = try response.asType(PayslipsResponse.self).slip
+        } catch {
+            // Diagnostic: dump the raw response body so we can see what
+            // Xero actually returned. Remove once the envelope shape
+            // is understood.
+            let body = String(data: response.data, encoding: .utf8) ?? "<non-utf8 body>"
+            print("[XeroKit] Payslip.with(id: \(id)) decode failed.")
+            print("  Status: \(response.statusCode ?? -1)")
+            print("  Body: \(body)")
+            throw error
+        }
 
         let _ratesArray: [EarningsRate_Template]
         if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
@@ -80,15 +86,10 @@ extension API {
         typealias API = Xero
         static var base: URL = API.baseURL.appending(path: "1.0/Payslip")
 
-        /// `/Payslip` — GET uses this with `?ID=<guid>` query param to
-        /// fetch a single Payslip (returns `{"Payslip": ...}`).
-        case list
-        /// `/Payslip/<guid>` — POST uses this for upserts.
         case with(_ id: String)
 
         var path: URL {
             switch self {
-            case .list:         Self.base
             case .with(let id): Self.base.appending(path: id)
             }
         }
