@@ -10,37 +10,27 @@ import Foundation
 extension Payslip {
 
     /**
-     Replaces the earnings lines on the Payslip identified by `id`.
-     POSTs `{"EarningsLines": [...]}` wrapped in the `[ ... ]` array
-     shape Xero requires for upserts. Returns the updated Payslip
-     echoed back by the server.
+     POSTs an updated set of EarningsLines for the Payslip identified by
+     `id`. Returns the updated Payslip echoed back by Xero in the response.
+
+     Note: Xero's POST `/Payslip/<id>` envelope uses a plural `Payslips`
+     array (one element), unlike the GET on the same URL which returns a
+     singular `Payslip` key — so this method decodes a separate
+     `PayslipUpdateResponse`.
      */
-    public static func update(
-        id: String,
-        with earningsLines: [EarningsLine],
-        retryPolicy policy: RetryPolicy = .retry
-    ) async throws -> Payslip {
+    public static func update(id: String, with earningsLines: [EarningsLine], retryPolicy policy: RetryPolicy = .retry) async throws -> Payslip {
         let lines = earningsLines.compactMap(\.json)
-        let response = try await API.Payslips.with(id).POST
+        let decoded = try await API.Payslips.with(id).POST
             .params(["EarningsLines": lines])
             .paramTransformer { dict in
                 try JSONSerialization.data(withJSONObject: [dict], options: .prettyPrinted)
             }
             .retryPolicy(policy)
             .response()
-
-        do {
-            return try response.asType(PayslipsResponse.self).slip
-        } catch {
-            // Diagnostic: dump the raw response body so we can see what
-            // Xero actually returned. Remove once the envelope shape
-            // is understood.
-            let body = String(data: response.data, encoding: .utf8) ?? "<non-utf8 body>"
-            print("[XeroKit] Payslip.update(id: \(id)) decode failed.")
-            print("  Status: \(response.statusCode ?? -1)")
-            print("  Body: \(body)")
-            throw error
-        }
+            .asType(PayslipUpdateResponse.self)
+        guard let slip = decoded.payslips.first
+        else { throw FetchError.noItemsFound }
+        return slip
     }
 
     /**
@@ -55,23 +45,11 @@ extension Payslip {
      - Returns: A Xero Payslip object corresponding to the payslip ID.
      */
     public static func with(id: String, retryPolicy policy: RetryPolicy = .retry) async throws -> Payslip {
-        let response = try await API.Payslips.with(id).GET
+        var slip = try await API.Payslips.with(id).GET
             .retryPolicy(policy)
             .response()
-
-        var slip: Payslip
-        do {
-            slip = try response.asType(PayslipsResponse.self).slip
-        } catch {
-            // Diagnostic: dump the raw response body so we can see what
-            // Xero actually returned. Remove once the envelope shape
-            // is understood.
-            let body = String(data: response.data, encoding: .utf8) ?? "<non-utf8 body>"
-            print("[XeroKit] Payslip.with(id: \(id)) decode failed.")
-            print("  Status: \(response.statusCode ?? -1)")
-            print("  Body: \(body)")
-            throw error
-        }
+            .asType(PayslipsResponse.self)
+            .slip
 
         let _ratesArray: [EarningsRate_Template]
         if let data = UserDefaults.standard.data(forKey: "XEROKIT_EARNINGS_RATES_LIST"),
@@ -107,24 +85,40 @@ extension API {
     }
 }
 
+/// GET `/Payslip/<id>` envelope. Singular `Payslip` key.
 struct PayslipsResponse: Decodable, XeroV1Response {
-    
     let slip: Payslip
-    
-    // Default Response Variables
+
     public let id: String
     public let source: String
     public let status: String
     @DateString var utcDate: Date?
-    
+
     enum CodingKeys: String, CodingKey {
         case id = "Id"
         case source = "ProviderName"
         case status = "Status"
         case utcDate = "DateTimeUTC"
-        
+
         case slip = "Payslip"
     }
-    
-    
+}
+
+/// POST `/Payslip/<id>` envelope. Plural `Payslips` array (one element).
+struct PayslipUpdateResponse: Decodable, XeroV1Response {
+    let payslips: [Payslip]
+
+    public let id: String
+    public let source: String
+    public let status: String
+    @DateString var utcDate: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id = "Id"
+        case source = "ProviderName"
+        case status = "Status"
+        case utcDate = "DateTimeUTC"
+
+        case payslips = "Payslips"
+    }
 }

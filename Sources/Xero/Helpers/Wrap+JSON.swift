@@ -20,11 +20,14 @@ internal extension Encodable {
      `Encodable` doesn't serialise to a top-level JSON object (e.g.
      an array or primitive).
 
-     - Note: The `as!` cast to `[String: any Sendable]` is safe because
-       `JSONSerialization` only ever produces `String`, `NSNumber`,
-       `NSNull`, `NSArray`, and `NSDictionary` values — all effectively
-       immutable + Sendable. `Sendable` is a marker protocol so the
-       cast is informational rather than checked.
+     - Note: The `as!` cast triggers Swift compiler warning "Forced cast
+       from 'Any' to 'any Sendable' always succeeds; did you mean to use
+       'as'?" — that suggestion is wrong: `Sendable` is a marker protocol
+       and Swift forbids it in `as` / `as?` conditional casts. The
+       warning is a known compiler bug (swiftlang/swift#86650). The cast
+       itself is safe — `JSONSerialization` only ever returns `String`,
+       `NSNumber`, `NSNull`, `NSArray`, or `NSDictionary`, all of which
+       are immutable + Sendable in practice.
      */
     var json: [String: any Sendable]? {
         guard let data = try? JSONEncoder().encode(self),

@@ -39,7 +39,6 @@ extension EarningsRate_Template {
            let ratesList = try? JSONDecoder().decode([EarningsRate_Template].self, from: data) {
             _ratesArray = ratesList
         } else { _ratesArray = try await list(retryPolicy: policy) }
-        let allRates = _ratesArray.filter { $0.rate != .Other }
 
         let employee = try await Employee.with(id: empId, retryPolicy: policy)
         guard let earningsLines = employee.payTemplate?.earnings
@@ -57,7 +56,7 @@ extension EarningsRate_Template {
 }
 
 public typealias PayRatesDict = [PayRate: EarningsRate]
-extension PayRatesDict: CustomStringConvertible {
+extension PayRatesDict {
     public var description: String {
         var desc = "["
         for rate in self {
@@ -204,10 +203,10 @@ struct EarningsRatesResponse: Decodable, CustomStringConvertible, XeroV2Response
     // Custom Description
     public var description: String {
         let rates = earningsRates
-            .compactMap { "\($0.name ?? "Unknown"), ID: \($0.rateId ?? "Unknown"), DefaultRate: \(($0.ratePerUnit ?? 0).formatted(.currency(code: "AUD")))" }
+            .compactMap { "\($0.name), ID: \($0.rateId), DefaultRate: \(($0.ratePerUnit ?? 0).formatted(.currency(code: "AUD")))" }
             .joined(separator: ",\n\t")
-        
-        return "EarningsRatesResponse(id: \(id), status: \(status), Source: \(source), dateUTC: \(dateUTC ?? .distantPast)), pagination: \(pagination)\nEarningsRates (\(earningsRates.count)): [\n\t\(rates)\n]"
+
+        return "EarningsRatesResponse(id: \(id), status: \(status), Source: \(source), dateUTC: \(dateUTC ?? .distantPast)), pagination: \(pagination ?? [:])\nEarningsRates (\(earningsRates.count)): [\n\t\(rates)\n]"
     }
     
     enum CodingKeys: String, CodingKey {
