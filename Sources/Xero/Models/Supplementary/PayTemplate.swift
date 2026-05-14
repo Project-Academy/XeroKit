@@ -41,12 +41,18 @@ public struct PayTemplate: Codable {
     }
 }
 
-public struct EarningsLine: Codable {
+public struct EarningsLine: Codable, Equatable {
     /// Xero earnings rate identifier.
     /// Corresponds to ``EarningsRate_Template``'s ``rateId`` property.
     public var rateId: String?
     /// Rate per unit of the EarningsLine
     public var rateValue: Decimal?
+    /// Quantity of units on this earnings line (e.g. hours worked).
+    /// Used on Payslip lines (not on PayTemplate template lines).
+    public var numberOfUnits: Decimal?
+    /// Earnings rate amount. Only applicable if the EarningsRate
+    /// RateType is `.fixed`.
+    public var fixedAmount: Decimal?
 
     /// Possible values: `earningsRate`, `enterRate`, and `salary`.
     /// In Project's context, almost always `enterRate`.
@@ -75,6 +81,8 @@ public struct EarningsLine: Codable {
     public init(
         rateId: String? = nil,
         rateValue: Decimal? = nil,
+        numberOfUnits: Decimal? = nil,
+        fixedAmount: Decimal? = nil,
         calcType: RateCalcType? = nil,
         unitsPerWeek: Int? = nil,
         salary: Decimal? = nil,
@@ -82,6 +90,8 @@ public struct EarningsLine: Codable {
     ) {
         self.rateId = rateId
         self.rateValue = rateValue
+        self.numberOfUnits = numberOfUnits
+        self.fixedAmount = fixedAmount
         self.calcType = calcType
         self.unitsPerWeek = unitsPerWeek
         self.salary = salary
@@ -91,6 +101,8 @@ public struct EarningsLine: Codable {
     enum CodingKeys: String, CodingKey {
         case rateId = "EarningsRateID"
         case rateValue = "RatePerUnit"
+        case numberOfUnits = "NumberOfUnits"
+        case fixedAmount = "FixedAmount"
         case calcType = "CalculationType"
         case unitsPerWeek = "NumberOfUnitsPerWeek"
         case salary = "AnnualSalary"
