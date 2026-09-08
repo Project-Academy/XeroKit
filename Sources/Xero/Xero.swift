@@ -132,10 +132,42 @@ public struct Xero: Tapioca {
         case 500:
             return try await retry(request, after: .seconds(3), onExhausted: HTTPError.otherError(statusCode: 500))
         default:
-            break
+            // Anything else is a rejection. Throw it with Xero's own
+            // reason attached rather than handing the caller a body
+            // that cannot decode into the expected envelope.
+            throw HTTPError.requestFailed(
+                statusCode: statusCode,
+                message: errorMessage(from: response)
+            )
         }
 
         return response
+    }
+
+    /**
+     Digs Xero's human-readable reason out of an error body.
+
+     Xero is not consistent about shape: V1 payroll returns
+     `{"Message": ...}`, validation failures nest the useful text in
+     `Elements[].ValidationErrors[].Message`, and V2 uses lowercase
+     `message`. Returns nil rather than guessing when none of those
+     are present — the raw body is logged separately either way.
+     */
+    private static func errorMessage(from response: Response) -> String? {
+        guard let json = response.json else { return nil }
+
+        if let elements = json["Elements"] as? [[String: Any]] {
+            let messages = elements
+                .compactMap { $0["ValidationErrors"] as? [[String: Any]] }
+                .flatMap { $0 }
+                .compactMap { $0["Message"] as? String }
+            if !messages.isEmpty { return messages.joined(separator: "; ") }
+        }
+
+        for key in ["Message", "message", "Detail", "detail", "Title", "title"] {
+            if let value = json[key] as? String, !value.isEmpty { return value }
+        }
+        return nil
     }
 
     /**
