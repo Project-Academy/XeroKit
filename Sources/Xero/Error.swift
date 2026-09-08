@@ -5,6 +5,8 @@
 //  Created by Sarfraz Basha on 24/11/2025.
 //
 
+import Foundation
+
 public protocol XeroError: Error {}
 
 public enum AuthError: Error, XeroError {
