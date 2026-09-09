@@ -11,9 +11,10 @@ https://github.com/Project-Academy/XeroKit
 ```swift
  Xero.tokenFetcher = {
     // Your code to fetch the Bearer Token.
-    guard let bearer: Bearer = try await supabase.functions
-        .invoke("xero-access-token")
-    else { throw AuthError.failedToFetchToken }
+    guard let bearer: Bearer = try await supabase.functions.invoke(
+        "payroll/tokens/xero-token",
+        options: .init(method: .get)
+    ) else { throw AuthError.failedToFetchToken }
     return bearer
 }
 
