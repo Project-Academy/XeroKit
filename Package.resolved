@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Project-Academy/Syrup.git",
       "state" : {
-        "revision" : "277f8a9cc08435906ee55f988355dd0124f44681",
-        "version" : "1.1.0"
+        "revision" : "529a3dcf3fd70ea96f8f033b9b4319c5f0d7b37d",
+        "version" : "1.2.0"
       }
     },
     {
