@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum Gender: String, Codable {
+public enum Gender: String, Codable, Sendable {
     case male = "M"
     case female = "F"
     case nonBinary = "I"

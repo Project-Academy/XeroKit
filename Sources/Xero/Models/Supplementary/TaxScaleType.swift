@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum TaxScaleType: String, Codable {
+public enum TaxScaleType: String, Codable, Sendable {
     case regular                  = "REGULAR"
     case actorsArtistsEntertainers = "ACTORSARTISTSENTERTAINERS"
     case horticulturistOrShearer  = "HORTICULTURISTORSHEARER"

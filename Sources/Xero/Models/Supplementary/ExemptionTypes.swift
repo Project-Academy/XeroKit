@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum TFNExemptionType: String, Codable {
+public enum TFNExemptionType: String, Codable, Sendable {
     /// Employee has not provided a TFN.
     /// TaxScaleType must not be set.
     case notQuoted = "NOTQUOTED"

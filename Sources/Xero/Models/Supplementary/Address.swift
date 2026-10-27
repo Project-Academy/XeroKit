@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Address: Codable {
+public struct Address: Codable, Sendable {
     /// Address line 1 for employee home address
     public var addressLine1:    String
     /// Address line 2 for employee home address
@@ -55,10 +55,10 @@ public struct Address: Codable {
     //--------------------------------------
     // MARK: - SUPPLEMENTARY TYPES -
     //--------------------------------------
-    public enum AusState: String, Codable {
+    public enum AusState: String, Codable, Sendable {
         case ACT, NSW, NT, QLD, SA, TAS, VIC, WA
     }
-    public enum Country: String, Codable {
+    public enum Country: String, Codable, Sendable {
         case australia = "AUSTRALIA"
     }
 }

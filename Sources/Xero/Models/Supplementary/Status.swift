@@ -8,7 +8,7 @@
 
 import Foundation
 
-public enum Status: String, Codable {
+public enum Status: String, Codable, Sendable {
     /// Employee with no Termination Date.
     case active     = "ACTIVE"
     /// Employee with a Termination Date.

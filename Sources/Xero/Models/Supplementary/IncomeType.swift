@@ -5,7 +5,7 @@
 
 import Foundation
 
-public enum IncomeType: String, Codable {
+public enum IncomeType: String, Codable, Sendable {
     case salaryAndWages       = "SALARYANDWAGES"
     case workingHolidayMaker  = "WORKINGHOLIDAYMAKER"
     case nonEmployee          = "NONEMPLOYEE"

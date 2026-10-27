@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum EmploymentBasis: String, Codable {
+public enum EmploymentBasis: String, Codable, Sendable {
     case casual     = "CASUAL"
     case fullTime   = "FULLTIME"
     case partTime   = "PARTTIME"

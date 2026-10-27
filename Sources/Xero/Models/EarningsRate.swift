@@ -130,6 +130,7 @@ extension EarningsRate_Template {
         case "Marking PPF": .MarkingPPF
         case "Heads": .Head
         case "Wilf Filming": .WilfFilming
+        case "Additional Pay": .AdditionalPay
         default: .Other
         }
     }
@@ -169,6 +170,7 @@ public enum PayRate: String, Codable, Sendable, CustomStringConvertible {
     case Head
     
     case WilfFilming
+    case AdditionalPay
     case Other
     
     public var description: String { ".\(rawValue)" }

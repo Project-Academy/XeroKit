@@ -10,7 +10,7 @@
 
 import Foundation
 
-public struct SuperMembership: Codable {
+public struct SuperMembership: Codable, Sendable {
     public var superMembershipId: String?
     public var superFundId:       String?
     public var employeeNumber:    String?

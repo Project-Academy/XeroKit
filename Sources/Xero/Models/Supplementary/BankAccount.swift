@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct BankAccount: Codable {
+public struct BankAccount: Codable, Sendable {
 
     /// The text that will appear on your employee's bank statement when they receive payment
     public var statementText:   String?

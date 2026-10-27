@@ -25,6 +25,8 @@ public struct Xero: Tapioca {
     }()
     public static var hasToken: Bool { _token.isValid }
     public static var tokenFetcher: (() async throws -> (Bearer))?
+    /// Called when Xero rejects the token, so a kept copy can be forgotten.
+    public static var onUnauthorized: (@MainActor () -> Void)?
 
     /**
      Single in-flight task that coalesces concurrent callers onto one
@@ -69,6 +71,9 @@ public struct Xero: Tapioca {
 
     public static func postProcess(response: Response, from request: R) async throws -> Response {
 
+        // MARK: Rate Limits
+        if let limits = RateLimits(response) { rateLimits = limits }
+
         // MARK: Error Handling
         guard let statusCode = response.statusCode
         else { throw PrestoError.noStatusCode }
@@ -98,6 +103,8 @@ public struct Xero: Tapioca {
         switch statusCode {
         case 401: // Unauthorized / AuthenticationUnsuccessful
             print("Error: 401 Unauthorized")
+            token = nil
+            onUnauthorized?()
 
             /**
              NOTE: Take care with fetching a token to avoid scenarios
@@ -226,11 +233,16 @@ public struct Xero: Tapioca {
 
 public struct Bearer: Codable, Sendable {
     let token:      String
-    let expiresIn:  Int
+    public let expiresIn:  Int
     let tokenType:  String
     let scopes:     [String]
 
     public var key: String { "Bearer \(token)" }
+
+    /// The same token with less time left, for a token kept from an earlier launch.
+    public func remaining(_ seconds: Int) -> Bearer {
+        Bearer(token: token, expiresIn: seconds, tokenType: tokenType, scopes: scopes)
+    }
 }
 extension Bearer: CustomStringConvertible {
     public var description: String {

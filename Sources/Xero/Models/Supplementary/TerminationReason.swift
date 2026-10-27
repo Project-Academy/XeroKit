@@ -5,7 +5,7 @@
 
 import Foundation
 
-public enum TerminationReason: String, Codable {
+public enum TerminationReason: String, Codable, Sendable {
     /// Voluntary cessation — resignation, retirement, abandonment.
     case V
     /// Ill health — resignation due to medical condition or permanent disability.

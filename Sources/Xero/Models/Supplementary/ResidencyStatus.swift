@@ -5,7 +5,7 @@
 
 import Foundation
 
-public enum ResidencyStatus: String, Codable {
+public enum ResidencyStatus: String, Codable, Sendable {
     /// Employee is an Australian resident for tax purposes.
     /// `australianResidentForTaxPurposes` must be `true`.
     case australianResident = "AUSTRALIANRESIDENT"

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Employee: Codable {
+public struct Employee: Codable, Sendable {
 
     public var employeeId: String?
 

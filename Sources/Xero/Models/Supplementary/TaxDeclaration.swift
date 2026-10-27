@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct TaxDeclaration: Codable {
+public struct TaxDeclaration: Codable, Sendable {
 
     //--------------------------------------
     // MARK: - CORE FIELDS -
